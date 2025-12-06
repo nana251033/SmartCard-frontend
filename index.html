@@ -1,0 +1,612 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>SmartCard AI | 信用卡小幫手</title>
+    
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=Noto+Sans+TC:wght=300;400;500;700&display=swap" rel="stylesheet">
+
+    <style>
+        body { font-family: 'Inter', 'Noto Sans TC', sans-serif; background-color: #f8fafc; }
+        .hide-scrollbar::-webkit-scrollbar { display: none; }
+        #ai-response-area ul { list-style-type: disc; padding-left: 1.2rem; margin-bottom: 0.5rem; }
+        #ai-response-area li { margin-bottom: 0.25rem; }
+        #ai-response-area strong { color: #4f46e5; }
+    </style>
+</head>
+<body class="h-screen w-screen overflow-hidden flex flex-col text-slate-800">
+
+    <div id="view-login" class="absolute inset-0 z-50 bg-white flex flex-col items-center justify-center p-8">
+        <div class="w-16 h-16 bg-indigo-600 rounded-2xl flex items-center justify-center text-white text-3xl mb-6 shadow-xl">
+            <i class="fas fa-shield-cat"></i>
+        </div>
+        <h1 class="text-2xl font-bold mb-2">SmartCard AI</h1>
+        <p class="text-slate-400 text-sm mb-8 text-center">安全、智慧、跨裝置<br>您的雲端信用卡管家</p>
+        
+        <button id="btn-google-login" class="flex items-center gap-3 bg-white border border-slate-200 px-6 py-3 rounded-xl shadow-sm hover:bg-slate-50 transition-all">
+            <i class="fab fa-google text-red-500"></i>
+            <span class="font-medium text-slate-700">使用 Google 登入</span>
+        </button>
+        <div id="login-status" class="mt-4 text-xs text-indigo-500 hidden"><i class="fas fa-circle-notch fa-spin mr-2"></i>連線中...</div>
+    </div>
+
+    <div id="app-container" class="flex-1 flex flex-col hidden h-full">
+        
+        <header class="bg-white px-5 py-4 flex justify-between items-center shadow-sm z-10 sticky top-0">
+            <div class="flex items-center gap-2 text-indigo-600">
+                <i class="fas fa-wand-magic-sparkles text-xl"></i>
+                <span class="font-bold text-lg">SmartCard AI</span>
+            </div>
+            <div class="flex items-center gap-3">
+                <span id="user-name" class="text-xs text-slate-400 font-medium"></span>
+                <button onclick="logout()" class="w-8 h-8 rounded-full bg-slate-50 flex items-center justify-center text-slate-400 hover:text-red-500 transition-colors">
+                    <i class="fas fa-sign-out-alt"></i>
+                </button>
+            </div>
+        </header>
+
+        <main class="flex-1 overflow-y-auto hide-scrollbar p-5 pb-24">
+            
+            <div id="view-cards">
+                <div class="flex justify-between items-end mb-4">
+                    <h2 class="text-xl font-bold text-slate-800">我的卡片</h2>
+                    <span class="text-xs text-slate-400">雲端同步中</span>
+                </div>
+                <div id="card-list-container">
+                    <div class="text-center py-10 text-gray-400">載入中...</div>
+                </div>
+            </div>
+
+            <div id="view-search" class="hidden">
+                <div class="mb-4 flex justify-between items-end">
+                    <div>
+                        <h2 class="text-xl font-bold text-slate-800 mb-1">智慧試算</h2>
+                        <p class="text-sm text-slate-400">輸入消費情境，AI幫你算</p>
+                    </div>
+                    <button onclick="openAiAdvisor()" class="text-xs bg-indigo-50 text-indigo-600 px-3 py-1.5 rounded-full font-medium hover:bg-indigo-100 transition-colors">
+                        <i class="fas fa-robot mr-1"></i>AI 顧問
+                    </button>
+                </div>
+
+                <div id="search-input-area" class="bg-white p-4 rounded-2xl shadow-sm border border-slate-100 mb-6">
+                    <div class="flex gap-2 mb-3">
+                        <div class="relative flex-1">
+                            <i class="fas fa-search absolute left-4 top-3.5 text-slate-400"></i>
+                            <input type="text" id="search-keyword" placeholder="地點? (例: 7-11)" class="w-full pl-10 pr-4 py-3 bg-slate-50 border-0 rounded-xl text-slate-800 outline-none">
+                        </div>
+                    </div>
+                    
+                    <div class="flex gap-2 mb-3">
+                        <div class="relative w-1/3">
+                            <select id="search-currency" class="w-full h-full pl-3 pr-2 py-3 bg-slate-50 border-0 rounded-xl text-slate-800 outline-none appearance-none font-bold text-sm">
+                                <option value="TWD">🇹🇼 TWD</option>
+                                <option value="JPY">🇯🇵 JPY</option>
+                                <option value="KRW">🇰🇷 KRW</option>
+                                <option value="USD">🇺🇸 USD</option>
+                            </select>
+                            <i class="fas fa-chevron-down absolute right-3 top-4 text-xs text-slate-400 pointer-events-none"></i>
+                        </div>
+                        <div class="relative flex-1">
+                            <i class="fas fa-dollar-sign absolute left-4 top-3.5 text-slate-400"></i>
+                            <input type="number" id="search-amount" placeholder="金額?" class="w-full pl-10 pr-4 py-3 bg-slate-50 border-0 rounded-xl text-slate-800 outline-none">
+                        </div>
+                    </div>
+                    
+                    <button onclick="performSmartSearch()" class="w-full py-3 bg-slate-800 text-white rounded-xl font-medium shadow-lg hover:bg-slate-700 active:scale-95 transition-all">
+                        查詢最優惠的卡
+                    </button>
+                </div>
+
+                <div id="category-grid" class="grid grid-cols-4 gap-2 mb-6">
+                    </div>
+
+                <div id="search-result-container" class="hidden mt-4 animate-fade-in"></div>
+            </div>
+
+            <div id="view-alerts" class="hidden">
+                <h2 class="text-xl font-bold text-slate-800 mb-4">提醒中心</h2>
+                <div id="alert-container"></div>
+            </div>
+        </main>
+
+        <button id="btn-add-card-fab" class="absolute bottom-20 right-5 w-14 h-14 bg-slate-800 text-white rounded-full shadow-xl flex items-center justify-center text-xl hover:bg-slate-700 active:scale-90 z-20 transition-all">
+            <i class="fas fa-plus"></i>
+        </button>
+
+        <nav class="bg-white border-t border-slate-100 h-16 flex justify-around items-center px-2 z-30 shadow-[0_-5px_10px_rgba(0,0,0,0.02)]">
+            <button class="nav-item flex-1 flex flex-col items-center justify-center text-indigo-600 transition-colors" data-target="cards">
+                <i class="fas fa-credit-card text-lg mb-1"></i><span class="text-[10px] font-medium">卡片</span>
+            </button>
+            <button class="nav-item flex-1 flex flex-col items-center justify-center text-slate-400 transition-colors" data-target="search">
+                <i class="fas fa-brain text-lg mb-1"></i><span class="text-[10px] font-medium">AI 助手</span>
+            </button>
+            <button class="nav-item flex-1 flex flex-col items-center justify-center text-slate-400 transition-colors" data-target="alerts">
+                <i class="fas fa-bell text-lg mb-1"></i><span class="text-[10px] font-medium">提醒</span>
+            </button>
+        </nav>
+    </div>
+
+    <div id="modal-addCard" class="fixed inset-0 z-50 hidden">
+        <div class="absolute inset-0 bg-slate-900/50 backdrop-blur-sm transition-opacity" onclick="toggleModal('addCard', false)"></div>
+        <div class="absolute bottom-0 left-0 right-0 bg-white rounded-t-3xl p-6 max-h-[90vh] overflow-y-auto animate-slide-up">
+            <div class="w-12 h-1 bg-slate-200 rounded-full mx-auto mb-6"></div>
+            <h3 class="text-lg font-bold text-slate-800 mb-4" id="card-modal-title">新增信用卡</h3>
+            <form id="add-card-form" class="space-y-4">
+                <input type="hidden" id="card-id"> <div><label class="text-xs text-slate-500">卡片名稱</label><input type="text" id="card-name" class="w-full px-4 py-3 bg-slate-50 rounded-xl outline-none" placeholder="例如: J卡"></div>
+                <div><label class="text-xs text-slate-500">發卡銀行</label><input type="text" id="card-bank" class="w-full px-4 py-3 bg-slate-50 rounded-xl outline-none" placeholder="例如: 富邦"></div>
+                <div>
+                    <label class="text-xs text-slate-500">主要類別</label>
+                    <select id="card-category" class="w-full px-4 py-3 bg-slate-50 rounded-xl outline-none">
+                        <option value="cvs">超商量販</option>
+                        <option value="online">網購數位</option>
+                        <option value="travel">旅遊海外</option>
+                        <option value="pay">行動支付</option>
+                        <option value="other">一般消費</option>
+                    </select>
+                </div>
+
+                <div><label class="text-xs text-slate-500">主要回饋 (%)</label><input type="number" id="card-reward-rate" step="0.1" class="w-full px-4 py-3 bg-slate-50 rounded-xl outline-none" placeholder="例如: 1.5"></div>
+
+                <div><label class="text-xs text-slate-500">結帳日 (號)</label><input type="number" id="card-statement-due" class="w-full px-4 py-3 bg-slate-50 rounded-xl outline-none"></div>
+                <div><label class="text-xs text-slate-500">繳費日 (號)</label><input type="number" id="card-due" class="w-full px-4 py-3 bg-slate-50 rounded-xl outline-none"></div>
+                <div><label class="text-xs text-slate-500">優惠期限</label><input type="date" id="card-offer-expiry" class="w-full px-4 py-3 bg-slate-50 rounded-xl outline-none"></div>
+                
+                <div><label class="text-xs text-slate-500">備註</label><textarea id="card-note" class="w-full px-4 py-3 bg-slate-50 rounded-xl outline-none" rows="2"></textarea></div>
+                <button type="button" id="btn-save-card" onclick="saveCard()" class="w-full py-3 bg-indigo-600 text-white rounded-xl font-medium shadow-lg hover:bg-indigo-700">儲存卡片</button>
+            </form>
+        </div>
+    </div>
+
+    <div id="modal-aiAdvisor" class="fixed inset-0 z-50 hidden">
+        <div class="absolute inset-0 bg-slate-900/50 backdrop-blur-sm" onclick="toggleModal('aiAdvisor', false)"></div>
+        <div class="absolute bottom-0 left-0 right-0 bg-white rounded-t-3xl p-6 h-[80vh] flex flex-col animate-slide-up">
+            <div class="flex justify-between items-center mb-4">
+                <h3 class="text-lg font-bold text-slate-800">AI 策略顧問</h3>
+                <button onclick="toggleModal('aiAdvisor', false)" class="text-slate-400"><i class="fas fa-times"></i></button>
+            </div>
+            <div id="ai-response-area" class="flex-1 overflow-y-auto bg-slate-50 rounded-xl p-4 mb-4 text-sm leading-relaxed text-slate-700 hidden"></div>
+            <div class="relative">
+                <input type="text" id="ai-query-input" placeholder="例如: 我要去日本玩，怎麼刷最划算?" class="w-full pl-4 pr-12 py-3 border rounded-xl outline-none focus:border-indigo-500">
+                <button id="btn-ask-ai" onclick="askGeminiAdvisor()" class="absolute right-2 top-2 w-8 h-8 bg-indigo-600 text-white rounded-lg flex items-center justify-center">
+                    <i class="fas fa-paper-plane text-xs"></i>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <div id="toast-container" class="fixed bottom-5 right-5 z-50 pointer-events-none"></div>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-app.js";
+        import { getAuth, GoogleAuthProvider, signInWithPopup, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-auth.js";
+
+        // 確保替換為您的 Firebase 配置
+        const firebaseConfig = {
+            // 我將這個 Key 設為空，您必須換成您 Google 專案中**有效**的 API Key
+            apiKey: "AIzaSyC5ty4tMMwlULA9qrNmWHDEHUI21ZZPv-I", 
+            authDomain: "smartcard202512.firebaseapp.com",
+            projectId: "smartcard202512",
+            storageBucket: "smartcard202512.firebasestorage.app",
+            messagingSenderId: "141292004176",
+            appId: "1:141292004176:web:eda2e0c9764086d4fc8255"
+        };
+        
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        
+        let authToken = null;
+        let userCards = [];
+        const backendUrl = 'http://localhost:3000'; // 後端地址
+        
+        const CATEGORIES = [
+            
+            { id: 'other', name: '一般消費', icon: 'fa-credit-card' },
+            { id: 'cvs', name: '超商量販', icon: 'fa-store' },
+            { id: 'online', name: '網購數位', icon: 'fa-globe' },
+            { id: 'travel', name: '旅遊海外', icon: 'fa-plane' },
+            { id: 'pay', name: '行動支付', icon: 'fa-mobile-screen' },
+            { id: 'food', name: '餐廳美食', icon: 'fa-utensils' },
+            
+        ];
+
+        // --- DOM Cache ---
+        const els = {
+            loginView: document.getElementById('view-login'),
+            appContainer: document.getElementById('app-container'),
+            cardList: document.getElementById('card-list-container'),
+            searchResult: document.getElementById('search-result-container'),
+            categoryGrid: document.getElementById('category-grid'),
+            loginStatus: document.getElementById('login-status'),
+            userName: document.getElementById('user-name'),
+            modalTitle: document.getElementById('card-modal-title'),
+            cardIdInput: document.getElementById('card-id'),
+            addCardForm: document.getElementById('add-card-form')
+        };
+
+        // --- Render UI (分類按鈕) ---
+        els.categoryGrid.innerHTML = CATEGORIES.map(c => `
+            <button onclick="window.selectCategory('${c.id}')" class="flex flex-col items-center justify-center p-3 bg-white rounded-xl border border-slate-100 active:bg-indigo-50 transition-colors">
+                <i class="fas ${c.icon} text-indigo-500 mb-1"></i><span class="text-[10px] text-slate-600">${c.name}</span>
+            </button>
+        `).join('');
+
+        // --- Auth Logic ---
+        onAuthStateChanged(auth, async (user) => {
+            if (user) {
+                authToken = await user.getIdToken();
+                els.loginView.classList.add('hidden');
+                els.appContainer.classList.remove('hidden');
+                els.userName.innerText = `Hi, ${user.displayName || 'User'}`;
+                await fetchCards(); // 登入後自動抓取資料
+            } else {
+                authToken = null;
+                els.loginView.classList.remove('hidden');
+                els.appContainer.classList.add('hidden');
+            }
+        });
+
+        document.getElementById('btn-google-login').onclick = async () => {
+            els.loginStatus.classList.remove('hidden');
+            try { await signInWithPopup(auth, new GoogleAuthProvider()); }
+            catch(e) { showToast("登入失敗", "error"); els.loginStatus.classList.add('hidden'); }
+        };
+
+        window.logout = () => signOut(auth);
+
+        // --- API Calls (Backend) ---
+        
+        async function fetchCards() {
+            if (!authToken) return;
+            els.cardList.innerHTML = `<div class="text-center py-10 text-gray-400"><i class="fas fa-circle-notch fa-spin mr-2"></i>同步資料中...</div>`;
+            try {
+                const res = await fetch(`${backendUrl}/api/cards`, { headers: { 'Authorization': `Bearer ${authToken}` }});
+                const json = await res.json();
+                userCards = json.data || [];
+                renderCardList();
+                renderAlerts();
+            } catch(e) {
+                els.cardList.innerHTML = `<div class="text-center py-10 text-red-400">連線錯誤</div>`;
+            }
+        }
+
+        window.saveCard = async function() {
+            if (!authToken) return;
+            const cardId = els.cardIdInput.value; // 檢查是否有 ID (編輯模式)
+            const isEditing = !!cardId;
+            const method = isEditing ? 'PUT' : 'POST';
+            const url = isEditing ? `${backendUrl}/api/cards/${cardId}` : `${backendUrl}/api/cards`;
+
+            const btn = document.getElementById('btn-save-card');
+            const originalText = btn.innerText;
+            btn.innerText = (isEditing ? '更新' : '儲存') + '中...'; btn.disabled = true;
+
+            // 🟢 Q2 修正：讀取並傳遞回饋率 🟢
+    const rewardRate = document.getElementById('card-reward-rate').value;
+
+            const cardData = {
+                rewardRate: rewardRate,
+                name: document.getElementById('card-name').value,
+                bank: document.getElementById('card-bank').value,
+                mainCategory: document.getElementById('card-category').value,
+                statementDate: document.getElementById('card-statement-due').value, // 新增
+                dueDate: document.getElementById('card-due').value,
+                offerExpiryDate: document.getElementById('card-offer-expiry').value, // 新增
+                note: document.getElementById('card-note').value
+                
+            };
+
+            try {
+                const res = await fetch(url, {
+                    method: method,
+                    headers: { 'Authorization': `Bearer ${authToken}`, 'Content-Type': 'application/json' },
+                    body: JSON.stringify(cardData)
+                });
+                if(res.ok) {
+                    showToast("卡片" + (isEditing ? '更新' : '新增') + "成功");
+                    toggleModal('addCard', false);
+                    els.addCardForm.reset();
+                    els.cardIdInput.value = ''; // 清除 ID
+                    await fetchCards();
+                } else {
+                    const err = await res.json();
+                    showToast(err.message || (isEditing ? "更新失敗" : "新增失敗"), "error");
+                }
+            } catch(e) { showToast("連線錯誤", "error"); }
+            btn.innerText = originalText; btn.disabled = false;
+        };
+        
+        // 編輯卡片函數
+       window.editCard = function(cardId) {
+    const card = userCards.find(c => c.id === cardId);
+    if (!card) return;
+
+  
+    document.getElementById('card-reward-rate').value = card.rewardRate && card.rewardRate > 0 ? card.rewardRate : '';
+
+            // 設置 Modal 為編輯模式
+            els.modalTitle.innerText = `編輯 ${card.name}`;
+            els.cardIdInput.value = card.id;
+            
+            // 載入資料
+            document.getElementById('card-name').value = card.name;
+            document.getElementById('card-bank').value = card.bank;
+            document.getElementById('card-category').value = card.mainCategory;
+            document.getElementById('card-statement-due').value = card.statementDate > 0 ? card.statementDate : ''; // 結帳日
+            document.getElementById('card-due').value = card.dueDate;
+            document.getElementById('card-offer-expiry').value = card.offerExpiryDate || ''; // 優惠期限
+            document.getElementById('card-note').value = card.note;
+
+            // 更改按鈕文字
+            document.getElementById('btn-save-card').innerText = '更新卡片';
+            
+            toggleModal('addCard', true, true);
+        };
+
+
+        window.deleteCard = async function(id) {
+            if(!confirm("確定刪除此卡？")) return;
+            try {
+                const res = await fetch(`${backendUrl}/api/cards/${id}`, {
+                    method: 'DELETE',
+                    headers: { 'Authorization': `Bearer ${authToken}` }
+                });
+                if(res.ok) {
+                    showToast("已刪除");
+                    await fetchCards();
+                }
+            } catch(e) { showToast("刪除失敗", "error"); }
+        };
+
+       window.performSmartSearch = async function() {
+    const keyword = document.getElementById('search-keyword').value;
+    const amount = document.getElementById('search-amount').value;
+    const currency = document.getElementById('search-currency').value;
+
+    // 🟢 修正：僅要求 keyword 必填 🟢
+    if(!keyword) return showToast("請輸入關鍵字", "error");
+
+    els.searchResult.innerHTML = `<div class="text-center py-6 text-indigo-500"><i class="fas fa-circle-notch fa-spin mr-2"></i>AI 試算中...</div>`;
+    els.searchResult.classList.remove('hidden');
+    els.categoryGrid.classList.add('hidden');
+
+    try {
+        // 如果 amount 為空，後端將使用預設值
+        const params = new URLSearchParams({ keyword, amount: amount || 0, currency }); 
+        const res = await fetch(`${backendUrl}/api/smart-search?${params}`, {
+            headers: { 'Authorization': `Bearer ${authToken}` }
+        });
+        const json = await res.json();
+        renderSearchResults(json.data, currency, json.meta);
+    } catch(e) {
+        els.searchResult.innerHTML = `<div class="text-center text-red-500">試算失敗</div>`;
+    }
+};
+
+        // --- AI Features (Backend Proxy) ---
+        
+        window.askGeminiAdvisor = async function() {
+            const queryText = document.getElementById('ai-query-input').value;
+            if(!queryText) return showToast("請輸入問題", "error");
+            
+            const area = document.getElementById('ai-response-area');
+            const btn = document.getElementById('btn-ask-ai');
+            
+            area.classList.remove('hidden');
+            area.innerHTML = '<div class="text-center text-gray-400 py-2"><i class="fas fa-spinner fa-spin"></i> AI 思考中...</div>';
+            btn.disabled = true;
+
+            try {
+                const res = await fetch(`${backendUrl}/api/ai-advisor`, {
+                    method: 'POST',
+                    headers: { 'Authorization': `Bearer ${authToken}`, 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ queryText })
+                });
+                const json = await res.json();
+                area.innerHTML = marked.parse(json.reply);
+            } catch(e) { area.innerHTML = "AI 連線失敗"; }
+            btn.disabled = false;
+        };
+
+        
+        // --- UI Rendering ---
+
+    function renderCardList() {
+    if(userCards.length === 0) {
+        els.cardList.innerHTML = `<div class="flex flex-col items-center justify-center py-12 text-gray-400"><i class="fas fa-wallet text-4xl mb-3 text-slate-200"></i><p>錢包空空的</p><p class="text-xs mt-1">點擊右下角 + 新增卡片</p></div>`;
+        return;
+    }
+    els.cardList.innerHTML = userCards.map(c => {
+        const today = new Date().getDate();
+        let daysLeft = c.dueDate - today;
+        let dueDisplay = '';
+        
+        if (c.dueDate > 0) {
+            if(daysLeft < 0) daysLeft += 30;
+            dueDisplay = `<div class="flex flex-col items-end"><span class="text-[10px] text-white/70">繳費截止 (${c.dueDate}號)</span><span class="text-sm font-bold bg-white text-indigo-700 px-2 py-0.5 rounded-full mt-1">剩 ${daysLeft} 天</span></div>`;
+        } else {
+            dueDisplay = `<div class="flex flex-col items-end"><span class="text-[10px] text-white/70">繳費日</span><span class="text-sm font-bold bg-white text-slate-500 px-2 py-0.5 rounded-full mt-1">未設定</span></div>`;
+        }
+
+        const rewardRate = parseFloat(c.rewardRate) || 0; 
+        
+        // 🟢 Q1 修正：只有回饋率大於 0 才顯示回饋率區塊 🟢
+        const rewardDisplay = rewardRate > 0 ? `
+            <div class="mt-4 border-t border-white/30 pt-3 flex justify-between items-center">
+                <span class="text-xs font-medium text-white/80">主要回饋</span>
+                <span class="text-xl font-bold text-yellow-300">${rewardRate.toFixed(1)}%</span>
+            </div>
+        ` : '';
+
+        return `
+        <div onclick="editCard('${c.id}')" class="bg-indigo-600 text-white rounded-2xl p-5 shadow-lg mb-4 relative overflow-hidden active:bg-indigo-700 transition-colors cursor-pointer">
+            <div class="absolute top-0 right-0 w-20 h-20 bg-white opacity-10 rounded-bl-full -mr-4 -mt-4"></div>
+            <div class="flex justify-between items-start relative z-10">
+                <div>
+                    <div class="text-xs font-medium text-white/70 mb-1">${c.bank}</div>
+                    <h3 class="text-lg font-bold">${c.name}</h3>
+                    <div class="mt-2"><span class="px-2 py-1 bg-white/20 text-white text-[10px] rounded-md font-medium">${getCategoryName(c.mainCategory)}</span></div>
+                </div>
+                <div class="text-right">
+                    ${dueDisplay}
+                    <button onclick="event.stopPropagation(); deleteCard('${c.id}');" class="text-white/50 hover:text-red-300 mt-4 text-sm p-2"><i class="fas fa-trash-alt"></i></button>
+                </div>
+            </div>
+            ${rewardDisplay}
+        </div>`;
+    }).join('');
+}
+
+        function renderSearchResults(data, currency, meta) {
+    els.searchResult.innerHTML = '';
+    
+    // 🟢 Q3 修正：判斷是否為預設金額並顯示文字 🟢
+    const amountUsed = meta.amountUsed;
+    const isDefault = meta.isDefault1000;
+    const defaultText = isDefault ? ` (預設${amountUsed}元)` : ''; 
+
+    // 結果標題
+    const headerHtml = `
+        <h3 class="text-xl font-bold text-slate-800 mb-4">
+            試算結果 
+            <span class="text-sm font-medium text-slate-500">${currency} ${amountUsed.toLocaleString()} ${defaultText}</span> 
+        </h3>
+    `;
+    
+    // ... (後續渲染邏輯與之前保持一致)
+    const listHtml = data.map(c => {
+        const rewardPercent = (c.rewardRate * 100).toFixed(1);
+        const color = c.matchScore >= 30 ? 'bg-green-100 text-green-700' : 'bg-blue-100 text-blue-700';
+
+        return `
+            <div class="p-4 rounded-xl border-l-4 border-indigo-400 bg-white shadow-sm mb-3 flex justify-between items-center">
+                <div>
+                    <h4 class="font-bold text-slate-800">${c.bank} ${c.name}</h4>
+                    <p class="text-sm text-slate-500">預估回饋：<span class="font-medium text-indigo-600">${c.estimatedReward.toLocaleString()} ${currency}</span></p>
+                </div>
+                <div class="text-right">
+                    <span class="text-xs font-medium ${color} px-2 py-1 rounded-full">${rewardPercent}%</span>
+                </div>
+            </div>
+        `;
+    }).join('');
+
+    els.searchResult.innerHTML = headerHtml + listHtml;
+}
+
+        function renderAlerts() {
+    const today = new Date();
+    const todayDay = today.getDate();
+    
+    // 確保時間歸零，以便準確計算天數差異
+    const now = new Date(today.getFullYear(), today.getMonth(), today.getDate()); 
+    
+    const alerts = [];
+
+    userCards.forEach(c => {
+        // ---------------- 1. 繳費日提醒 (一週/7天內) ----------------
+        // 檢查：dueDate 必須大於 0 (表示有設定日期)
+        if (c.dueDate > 0) {
+            let daysLeftDue = c.dueDate - todayDay;
+            // 如果日期在當月已經過了，則計算到下個月的距離（假設一個月約30天）
+            if (daysLeftDue < 0) daysLeftDue += 30; 
+            
+            // 修正：提醒天數改為 7 天內
+            if (daysLeftDue >= 0 && daysLeftDue <= 7) { 
+                alerts.push({
+                    id: c.id,
+                    type: 'due',
+                    name: c.name,
+                    message: `繳費日為每月 ${c.dueDate} 號，還有 ${daysLeftDue} 天到期。`,
+                    days: daysLeftDue
+                });
+            }
+        }
+        
+        // ---------------- 2. 優惠期限提醒 (一個月/30天內) ----------------
+        if (c.offerExpiryDate) {
+            const expiryDate = new Date(c.offerExpiryDate);
+            expiryDate.setHours(0, 0, 0, 0);
+
+            const diffTime = expiryDate.getTime() - now.getTime();
+            // 計算天數差，向上取整確保當天也算一天
+            const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)); 
+            
+            // 修正：提醒天數改為 30 天內
+            if (diffDays >= 0 && diffDays <= 30) {
+                alerts.push({
+                    id: c.id,
+                    type: 'expiry',
+                    name: c.name,
+                    message: `優惠活動將在 ${c.offerExpiryDate} 到期。`,
+                    days: diffDays
+                });
+            }
+        }
+    });
+
+    const container = document.getElementById('alert-container');
+    if(alerts.length === 0) {
+        container.innerHTML = `<div class="flex flex-col items-center justify-center h-64 text-slate-300"><i class="fas fa-bell-slash text-4xl mb-3"></i><p>無緊急通知</p></div>`;
+        return;
+    }
+    
+    container.innerHTML = alerts.map(a => {
+        const icon = a.type === 'due' ? 'fa-exclamation' : 'fa-calendar-alt';
+        const color = a.type === 'due' ? 'border-red-400 text-red-500 bg-red-50' : 'border-amber-400 text-amber-500 bg-amber-50';
+
+        return `
+       <div class="bg-white p-4 rounded-xl border-l-4 ${color} shadow-sm mb-3 flex justify-between items-center">
+            <div><h4 class="font-bold text-slate-700">${a.type === 'due' ? '繳費提醒' : '優惠到期'}</h4><p class="text-sm text-slate-500"><span class="font-medium text-slate-800">${a.name}</span> ${a.message}</p></div>
+            <div class="w-8 h-8 rounded-full ${color.split(' ')[2]} flex items-center justify-center"><i class="fas ${icon}"></i></div>
+        </div>`;
+    }).join('');
+}
+
+        // --- Helpers ---
+
+        window.openAiAdvisor = () => toggleModal('aiAdvisor', true);
+        window.selectCategory = (id) => { document.getElementById('search-keyword').value = getCategoryName(id); };
+        window.clearSearch = () => { els.searchResult.classList.add('hidden'); els.categoryGrid.classList.remove('hidden'); document.getElementById('search-keyword').value=''; };
+        
+        window.toggleModal = (name, show) => {
+            const m = document.getElementById(`modal-${name}`);
+            if(show) { m.classList.remove('hidden'); } else { m.classList.add('hidden'); }
+            
+            // 處理 AddCard Modal 關閉時的重設
+            if (name === 'addCard' && !show) {
+                els.addCardForm.reset();
+                els.cardIdInput.value = '';
+                els.modalTitle.innerText = '新增信用卡';
+                document.getElementById('btn-save-card').innerText = '儲存卡片';
+            }
+        };
+
+        function getCategoryName(id) { return (CATEGORIES.find(c => c.id === id) || {}).name || id; }
+        
+        function showToast(msg, type='success') {
+            const t = document.createElement('div');
+            t.className = `fixed top-4 left-1/2 -translate-x-1/2 px-4 py-2 rounded-full text-white text-sm shadow-lg z-50 ${type==='success'?'bg-slate-800':'bg-red-500'}`;
+            t.innerText = msg;
+            document.body.appendChild(t);
+            setTimeout(() => t.remove(), 2500);
+        }
+
+        // Nav Logic
+        document.querySelectorAll('.nav-item').forEach(item => {
+            item.addEventListener('click', () => {
+                document.querySelectorAll('.nav-item').forEach(n => { n.classList.remove('text-indigo-600'); n.classList.add('text-slate-400'); });
+                item.classList.remove('text-slate-400'); item.classList.add('text-indigo-600');
+                ['cards', 'search', 'alerts'].forEach(v => document.getElementById(`view-${v}`).classList.add('hidden'));
+                document.getElementById(`view-${item.dataset.target}`).classList.remove('hidden');
+            });
+        });
+
+        document.getElementById('btn-add-card-fab').onclick = () => toggleModal('addCard', true);
+
+    </script>
+</body>
+</html>
