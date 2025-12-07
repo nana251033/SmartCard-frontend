@@ -11,14 +11,27 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=Noto+Sans+TC:wght=300;400;500;700&display=swap" rel="stylesheet">
 
     <style>
-        body { font-family: 'Inter', 'Noto Sans TC', sans-serif; background-color: #f8fafc; }
-        .hide-scrollbar::-webkit-scrollbar { display: none; }
-        #ai-response-area ul { list-style-type: disc; padding-left: 1.2rem; margin-bottom: 0.5rem; }
-        #ai-response-area li { margin-bottom: 0.25rem; }
-        #ai-response-area strong { color: #4f46e5; }
-    </style>
+    /* 修正行動裝置 100vh (h-screen) 錯誤的 CSS 變數 */
+    :root {
+        --vh: 1vh;
+    }
+    
+    /* 應用程式主體樣式 */
+    body { 
+        font-family: 'Inter', 'Noto Sans TC', sans-serif; 
+        background-color: #f8fafc; 
+        /* 🌟 修正點：使用 calc() 確保 body 的高度是螢幕的實際高度 (Universal Fix) 🌟 */
+        min-height: calc(var(--vh, 1vh) * 100); 
+    }
+
+    /* 其他既有樣式 */
+    .hide-scrollbar::-webkit-scrollbar { display: none; }
+    #ai-response-area ul { list-style-type: disc; padding-left: 1.2rem; margin-bottom: 0.5rem; }
+    #ai-response-area li { margin-bottom: 0.25rem; }
+    #ai-response-area strong { color: #4f46e5; }
+</style>
 </head>
-<body class="h-screen w-screen overflow-hidden flex flex-col text-slate-800">
+<body class="w-screen overflow-hidden flex flex-col text-slate-800">
 
     <div id="view-login" class="absolute inset-0 z-50 bg-white flex flex-col items-center justify-center p-8">
         <div class="w-16 h-16 bg-indigo-600 rounded-2xl flex items-center justify-center text-white text-3xl mb-6 shadow-xl">
@@ -49,7 +62,7 @@
             </div>
         </header>
 
-        <main class="flex-1 overflow-y-auto hide-scrollbar p-5 pb-24">
+        <main class="flex-1 overflow-y-auto hide-scrollbar p-5 pb-32">
             
             <div id="view-cards">
                 <div class="flex justify-between items-end mb-4">
@@ -181,6 +194,18 @@
     <div id="toast-container" class="fixed bottom-5 right-5 z-50 pointer-events-none"></div>
 
     <script type="module">
+
+// 修正行動裝置 100vh (h-screen) 錯誤的函數
+function setVh() {
+    let vh = window.innerHeight * 0.01;
+    // 將計算出的實際高度寫入 CSS 變數 --vh
+    document.documentElement.style.setProperty('--vh', `${vh}px`);
+}
+
+// 首次載入和視窗大小變動時執行 (這在 Android/iOS 上都適用)
+window.addEventListener('resize', setVh);
+setVh();
+
         import { initializeApp } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-app.js";
         import { getAuth, GoogleAuthProvider, signInWithPopup, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-auth.js";
 
