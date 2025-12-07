@@ -31,7 +31,7 @@
     #ai-response-area strong { color: #4f46e5; }
 </style>
 </head>
-<body class="w-screen overflow-hidden flex flex-col text-slate-800">
+<body class="w-screen flex flex-col text-slate-800">
 
     <div id="view-login" class="absolute inset-0 z-50 bg-white flex flex-col items-center justify-center p-8">
         <div class="w-16 h-16 bg-indigo-600 rounded-2xl flex items-center justify-center text-white text-3xl mb-6 shadow-xl">
@@ -147,18 +147,26 @@
         <div class="absolute inset-0 bg-slate-900/50 backdrop-blur-sm transition-opacity" onclick="toggleModal('addCard', false)"></div>
         <div class="absolute bottom-0 left-0 right-0 bg-white rounded-t-3xl p-6 max-h-[90vh] overflow-y-auto animate-slide-up">
             <div class="w-12 h-1 bg-slate-200 rounded-full mx-auto mb-6"></div>
-            <h3 class="text-lg font-bold text-slate-800 mb-4" id="card-modal-title">新增信用卡</h3>
+            
+            <div class="flex justify-between items-center mb-4">
+                <h3 class="text-lg font-bold text-slate-800" id="card-modal-title">新增信用卡</h3>
+                <button onclick="toggleModal('addCard', false)" class="text-slate-400 hover:text-slate-600">
+                    <i class="fas fa-times text-xl"></i>
+                </button>
+            </div>
+            
             <form id="add-card-form" class="space-y-4">
                 <input type="hidden" id="card-id"> <div><label class="text-xs text-slate-500">卡片名稱</label><input type="text" id="card-name" class="w-full px-4 py-3 bg-slate-50 rounded-xl outline-none" placeholder="例如: J卡"></div>
                 <div><label class="text-xs text-slate-500">發卡銀行</label><input type="text" id="card-bank" class="w-full px-4 py-3 bg-slate-50 rounded-xl outline-none" placeholder="例如: 富邦"></div>
                 <div>
                     <label class="text-xs text-slate-500">主要類別</label>
                     <select id="card-category" class="w-full px-4 py-3 bg-slate-50 rounded-xl outline-none">
+                        <option value="other">一般消費</option>
                         <option value="cvs">超商量販</option>
                         <option value="online">網購數位</option>
                         <option value="travel">旅遊海外</option>
                         <option value="pay">行動支付</option>
-                        <option value="other">一般消費</option>
+                        <option value="pay">餐廳美食</option>
                     </select>
                 </div>
 
@@ -346,29 +354,27 @@ setVh();
         
         // 編輯卡片函數
        window.editCard = function(cardId) {
-    const card = userCards.find(c => c.id === cardId);
-    if (!card) return;
+            const card = userCards.find(c => c.id === cardId);
+            if (!card) return;
 
-  
-    document.getElementById('card-reward-rate').value = card.rewardRate && card.rewardRate > 0 ? card.rewardRate : '';
-
-            // 設置 Modal 為編輯模式
+            // 🌟 修正點 B: 設置 Modal 為編輯模式 🌟
             els.modalTitle.innerText = `編輯 ${card.name}`;
             els.cardIdInput.value = card.id;
             
             // 載入資料
+            document.getElementById('card-reward-rate').value = card.rewardRate && card.rewardRate > 0 ? card.rewardRate : '';
             document.getElementById('card-name').value = card.name;
             document.getElementById('card-bank').value = card.bank;
             document.getElementById('card-category').value = card.mainCategory;
-            document.getElementById('card-statement-due').value = card.statementDate > 0 ? card.statementDate : ''; // 結帳日
+            document.getElementById('card-statement-due').value = card.statementDate > 0 ? card.statementDate : ''; 
             document.getElementById('card-due').value = card.dueDate;
-            document.getElementById('card-offer-expiry').value = card.offerExpiryDate || ''; // 優惠期限
+            document.getElementById('card-offer-expiry').value = card.offerExpiryDate || ''; 
             document.getElementById('card-note').value = card.note;
 
-            // 更改按鈕文字
+            // 更改按鈕文字為「更新卡片」
             document.getElementById('btn-save-card').innerText = '更新卡片';
             
-            toggleModal('addCard', true, true);
+            toggleModal('addCard', true); // 開啟 Modal
         };
 
 
@@ -597,16 +603,26 @@ setVh();
         window.selectCategory = (id) => { document.getElementById('search-keyword').value = getCategoryName(id); };
         window.clearSearch = () => { els.searchResult.classList.add('hidden'); els.categoryGrid.classList.remove('hidden'); document.getElementById('search-keyword').value=''; };
         
-        window.toggleModal = (name, show) => {
+       window.toggleModal = (name, show) => {
             const m = document.getElementById(`modal-${name}`);
-            if(show) { m.classList.remove('hidden'); } else { m.classList.add('hidden'); }
             
-            // 處理 AddCard Modal 關閉時的重設
+            if(show) { 
+                m.classList.remove('hidden'); 
+                
+                // 🌟 修正點 A: 開啟 Modal 時，強制重設為新增卡片模式 🌟
+                if (name === 'addCard' && !els.cardIdInput.value) {
+                    els.addCardForm.reset();
+                    els.modalTitle.innerText = '新增信用卡';
+                    document.getElementById('btn-save-card').innerText = '儲存卡片'; 
+                }
+            } else { 
+                m.classList.add('hidden'); 
+            }
+            
+            // 處理 AddCard Modal 關閉時的重設 (確保下次開啟時是乾淨的狀態)
             if (name === 'addCard' && !show) {
                 els.addCardForm.reset();
-                els.cardIdInput.value = '';
-                els.modalTitle.innerText = '新增信用卡';
-                document.getElementById('btn-save-card').innerText = '儲存卡片';
+                els.cardIdInput.value = ''; // 清除 ID
             }
         };
 
