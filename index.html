@@ -47,7 +47,7 @@
         <div id="login-status" class="mt-4 text-xs text-indigo-500 hidden"><i class="fas fa-circle-notch fa-spin mr-2"></i>連線中...</div>
     </div>
 
-    <div id="app-container" class="flex-1 flex flex-col hidden">
+ <div id="app-container" class="flex-1 flex flex-col hidden">
         
         <header class="bg-white px-5 py-4 flex justify-between items-center shadow-sm z-10 sticky top-0">
             <div class="flex items-center gap-2 text-indigo-600">
@@ -126,21 +126,21 @@
             </div>
         </main>
 
-        <button id="btn-add-card-fab" class="absolute bottom-20 right-5 w-14 h-14 bg-slate-800 text-white rounded-full shadow-xl flex items-center justify-center text-xl hover:bg-slate-700 active:scale-90 z-20 transition-all">
-            <i class="fas fa-plus"></i>
-        </button>
+        </div> <button id="btn-add-card-fab" class="fixed bottom-20 right-5 w-14 h-14 bg-slate-800 text-white rounded-full shadow-xl flex items-center justify-center text-xl hover:bg-slate-700 active:scale-90 z-20 transition-all">
+        <i class="fas fa-plus"></i>
+    </button>
 
-        <nav class="bg-white border-t border-slate-100 h-16 flex justify-around items-center px-2 z-30 shadow-[0_-5px_10px_rgba(0,0,0,0.02)]">
-            <button class="nav-item flex-1 flex flex-col items-center justify-center text-indigo-600 transition-colors" data-target="cards">
-                <i class="fas fa-credit-card text-lg mb-1"></i><span class="text-[10px] font-medium">卡片</span>
-            </button>
-            <button class="nav-item flex-1 flex flex-col items-center justify-center text-slate-400 transition-colors" data-target="search">
-                <i class="fas fa-brain text-lg mb-1"></i><span class="text-[10px] font-medium">AI 助手</span>
-            </button>
-            <button class="nav-item flex-1 flex flex-col items-center justify-center text-slate-400 transition-colors" data-target="alerts">
-                <i class="fas fa-bell text-lg mb-1"></i><span class="text-[10px] font-medium">提醒</span>
-            </button>
-        </nav>
+    <nav class="fixed bottom-0 w-full bg-white border-t border-slate-100 h-16 flex justify-around items-center px-2 z-30 shadow-[0_-5px_10px_rgba(0,0,0,0.02)]">
+        <button class="nav-item flex-1 flex flex-col items-center justify-center text-indigo-600 transition-colors" data-target="cards">
+            <i class="fas fa-credit-card text-lg mb-1"></i><span class="text-[10px] font-medium">卡片</span>
+        </button>
+        <button class="nav-item flex-1 flex flex-col items-center justify-center text-slate-400 transition-colors" data-target="search">
+            <i class="fas fa-brain text-lg mb-1"></i><span class="text-[10px] font-medium">AI 助手</span>
+        </button>
+        <button class="nav-item flex-1 flex flex-col items-center justify-center text-slate-400 transition-colors" data-target="alerts">
+            <i class="fas fa-bell text-lg mb-1"></i><span class="text-[10px] font-medium">提醒</span>
+        </button>
+    </nav>
     </div>
 
     <div id="modal-addCard" class="fixed inset-0 z-50 hidden">
